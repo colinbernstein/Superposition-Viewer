@@ -52,13 +52,10 @@ public class ColorScheme {
         return new Color(r, g, b);
     }*/
     
-    static Color transitionOfHueRange(double percentage, int startHue, int endHue) {
+    static Color transitionOfHueRange(double percentage, int startHue, int endHue, double saturation, double lightness) {
         // From 'startHue' 'percentage'-many to 'endHue'
         // Finally map from [0°, 360°] -> [0, 1.0] by dividing
         double hue = ((percentage * (endHue - startHue)) + startHue) / 360;
-        
-        double saturation = 0.75;
-        double lightness = 0.45;
         
         // Get the color
         return hslColorToRgb(hue, saturation, lightness);

@@ -3,7 +3,7 @@ public enum Variable {
     K_X("Kx", Double.MIN_VALUE, Double.MAX_VALUE),
     K_Y("Ky", Double.MIN_VALUE, Double.MAX_VALUE),
     RHO("ρ", 0.0, 1.0),
-    OMEGA("ω", 0.0, 1.0),
+    OMEGA("ω", 0.0, 100.0),
     PHI("φ", 0.0, 2 * Math.PI),
     TYPE("Type", 0.0, 0.2);
     
