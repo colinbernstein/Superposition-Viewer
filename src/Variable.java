@@ -40,19 +40,19 @@ enum Variable {
     private final String label;
     private final double min, max;
     private final HashMap<Integer, JLabel> tickLabelMap;
-    private double value;
+    //private double value;
     
     Variable(String label, double min, double max, HashMap<Integer, JLabel> tickLabelMap) {
         this.label = label;
         this.min = min;
         this.max = max;
         this.tickLabelMap = tickLabelMap;
-        value = 0.0;
+        //value = 0.0;
     }
     
-    void setValue(double value) {
+    /*void setValue(double value) {
         this.setValue(value);
-    }
+    }*/
     
     Variable nextLooping() {
         int ord = ordinal();
@@ -60,15 +60,15 @@ enum Variable {
     }
     
     String getLabel() {
-        return this.label;
+        return label;
     }
     
     double getMin() {
-        return this.min;
+        return min;
     }
     
     double getMax() {
-        return this.max;
+        return max;
     }
     
     Dictionary<Integer, JLabel> getTickLabelMap() {
@@ -91,6 +91,6 @@ enum WaveType {
     }
     
     String getLabel() {
-        return this.label;
+        return label;
     }
 }

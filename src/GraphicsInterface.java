@@ -4,6 +4,10 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 class GraphicsInterface {
+    // for synchronization
+    Object mouseLock = new Object();
+    //static Object keyLock = new Object();
+    
     JFrame frame;
     private BufferedImage offscreenImage;
     BufferedImage onscreenImage;    // double buffered graphics
@@ -43,7 +47,7 @@ class GraphicsInterface {
         double hs = factorY(2 * r);
         if (ws <= 1 && hs <= 1) pixel(x, y);
         else offscreen.fill(new Rectangle2D.Double(xs - ws / 2, ys - hs / 2, ws, hs));
-        draw();
+        //draw();
     }
     
     void show(int t) {
@@ -93,8 +97,10 @@ class GraphicsInterface {
      */
     void setXscale(double min, double max) {
         double size = max - min;
-        xmin = min - BORDER * size;
-        xmax = max + BORDER * size;
+        synchronized (mouseLock) {
+            xmin = min - BORDER * size;
+            xmax = max + BORDER * size;
+        }
     }
     
     /**
@@ -105,8 +111,10 @@ class GraphicsInterface {
      */
     void setYscale(double min, double max) {
         double size = max - min;
-        ymin = min - BORDER * size;
-        ymax = max + BORDER * size;
+        synchronized (mouseLock) {
+            ymin = min - BORDER * size;
+            ymax = max + BORDER * size;
+        }
     }
     
     double userX(double x) {
@@ -150,7 +158,7 @@ class GraphicsInterface {
         double hs = factorY(2 * halfHeight);
         if (ws <= 1 && hs <= 1) pixel(x, y);
         else offscreen.fill(new Rectangle2D.Double(xs - ws / 2, ys - hs / 2, ws, hs));
-        draw();
+        //draw();
     }
     
     /**

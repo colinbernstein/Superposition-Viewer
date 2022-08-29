@@ -7,6 +7,10 @@ abstract class WaveEquation {
         coefficients = new double[Variable.values().length];
     }
     
+    WaveEquation(double[] coefficients) {
+        this.coefficients = coefficients;
+    }
+    
     abstract double evaluateEquation(double x, double y, double t);
     
     double evaluateGeneralEquation(double k_dot_r, double t) {
@@ -35,9 +39,17 @@ class PlaneWaveEquation extends WaveEquation {
         super();
     }
     
+    PlaneWaveEquation(double[] coefficients) {
+        super(coefficients);
+    }
+    
     double evaluateEquation(double x, double y, double t) {
         double k_dot_r = (coefficients[Variable.K_X.ordinal()] * x) + (coefficients[Variable.K_Y.ordinal()] * y);
         return evaluateGeneralEquation(k_dot_r, t);
+    }
+    
+    RadialWaveEquation toRadialWave() {
+        return new RadialWaveEquation(coefficients);
     }
 }
 
@@ -46,7 +58,12 @@ class RadialWaveEquation extends WaveEquation {
     
     RadialWaveEquation() {
         super();
-        center = new double[2];
+        center = new double[]{Math.random(), Math.random()};
+    }
+    
+    RadialWaveEquation(double[] coefficients) {
+        super(coefficients);
+        center = new double[]{Math.random(), Math.random()};
     }
     
     double evaluateEquation(double x, double y, double t) {
@@ -61,6 +78,10 @@ class RadialWaveEquation extends WaveEquation {
     void setCenter(double x, double y) {
         center[0] = x;
         center[1] = y;
+    }
+    
+    PlaneWaveEquation toPlaneWave() {
+        return new PlaneWaveEquation(coefficients);
     }
 }
 

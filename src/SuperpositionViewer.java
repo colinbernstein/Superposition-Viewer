@@ -15,7 +15,7 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
     private static final int SLIDER_STEPS = 1000;
     
     
-    private static final int PERIOD_MILLIS = 1;
+    private static final int PERIOD_MILLIS = 20;
     private List<WaveEquation> waves;
     private double time;
     private int X, Y;
@@ -170,6 +170,15 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
             
             waveTypeButton.addActionListener(e -> {
                 currWaveType = currWaveType.nextLooping();
+                if (!waves.isEmpty()) {
+                    WaveEquation waveEquation = waves.get(currWaveIdx);
+                    if (waveEquation instanceof PlaneWaveEquation)
+                        waveEquation = ((PlaneWaveEquation) waveEquation).toRadialWave();
+                    else if (waveEquation instanceof RadialWaveEquation)
+                        waveEquation = ((RadialWaveEquation) waveEquation).toPlaneWave();
+                    waves.add(currWaveIdx, waveEquation);
+                    waves.remove(currWaveIdx + 1);
+                }
                 waveTypeButton.setText(currWaveType.getLabel());
             });
             addButton.addActionListener(e -> {
@@ -257,29 +266,42 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
     
     @Override
     public void mouseClicked(MouseEvent e) {
+        synchronized (mouseLock) {
+        }
     }
     
     @Override
     public void mousePressed(MouseEvent e) {
-        if (!waves.isEmpty()) {
-            WaveEquation wave = waves.get(currWaveIdx);
-            if (wave instanceof RadialWaveEquation) {
-                double x = (double) e.getX() / width;
-                double y = (double) e.getY() / height;
-                ((RadialWaveEquation) wave).setCenter(x, y);
+        synchronized (mouseLock) {
+            if (!waves.isEmpty()) {
+                WaveEquation wave = waves.get(currWaveIdx);
+                if (wave instanceof RadialWaveEquation) {
+                    double x = (double) e.getX() / width;
+                    double y = (double) e.getY() / height;
+                    ((RadialWaveEquation) wave).setCenter(x, y);
+                }
             }
         }
     }
     
     @Override
     public void mouseReleased(MouseEvent e) {
+        synchronized (mouseLock) {
+        
+        }
     }
     
     @Override
     public void mouseEntered(MouseEvent e) {
+        synchronized (mouseLock) {
+        
+        }
     }
     
     @Override
     public void mouseExited(MouseEvent e) {
+        synchronized (mouseLock) {
+        
+        }
     }
 }
