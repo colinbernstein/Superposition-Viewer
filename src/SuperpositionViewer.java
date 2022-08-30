@@ -18,7 +18,7 @@ public class SuperpositionViewer implements MouseListener {
     private static final int FRAME_WIDTH = 1000;
     private static final int FRAME_HEIGHT = 800;
     private static final int GRAPHICS_WIDTH = 1000;
-    private static final int GRAPHICS_HEIGHT = 600;
+    private static final int GRAPHICS_HEIGHT = 650;
     
     private static final int PERIOD_MILLIS = 1;
     private List<WaveEquation> waves;
@@ -35,9 +35,11 @@ public class SuperpositionViewer implements MouseListener {
                 if (!viewer.waves.isEmpty())
                     for (Variable var : Variable.values()) {
                         try {
-                            viewer.waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var, viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
+                            viewer.waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
+                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
                         } catch (Exception e) {
-                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " + viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
+                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
+                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
                         }
                     }
                 viewer.advance();
@@ -73,7 +75,8 @@ public class SuperpositionViewer implements MouseListener {
                 Color color = Color.WHITE;
                 if (!waves.isEmpty()) {
                     for (WaveEquation wave : waves)
-                        sample += wave.evaluateEquation((double) col / graphicsFrame.widthPixelCount, (double) row / graphicsFrame.heightPixelCount, time);
+                        sample += wave.evaluateEquation((double) col / graphicsFrame.widthPixelCount,
+                                (double) row / graphicsFrame.widthPixelCount, time);
                     sample = sample / waves.size() / 2.0 + 0.5;
                     if (sample <= 1.0 && sample >= 0.0)       //DEBUG FOR OUT OF RANGE VALUES
                         color = ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45);
@@ -99,7 +102,7 @@ public class SuperpositionViewer implements MouseListener {
         graphicsPanel.setSize(graphicsFrame.width, graphicsFrame.height);
         graphicsPanel.setLocation(0, FRAME_HEIGHT - GRAPHICS_HEIGHT);
         graphicsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        //graphicsPanel.setBackground(Color.RED);
+        graphicsPanel.setBackground(Color.GRAY);
         frame.add(graphicsPanel);
         graphicsPanel.add(draw);
         graphicsPanel.setVisible(true);
@@ -130,7 +133,7 @@ public class SuperpositionViewer implements MouseListener {
                 super();
                 this.var = var;
                 label = new JLabel(var.getLabel());
-                label.setBackground(Color.GREEN);
+                //label.setBackground(Color.GREEN);
                 
                 slider = new JSlider(0, SLIDER_STEPS);
                 slider.setLabelTable(var.getTickLabelMap());
@@ -300,7 +303,7 @@ public class SuperpositionViewer implements MouseListener {
                 WaveEquation wave = waves.get(currWaveIdx);
                 if (wave instanceof RadialWaveEquation) {
                     double x = (double) e.getX() / graphicsFrame.width;
-                    double y = (double) e.getY() / graphicsFrame.height;
+                    double y = (double) e.getY() / graphicsFrame.width;
                     ((RadialWaveEquation) wave).setCenter(x, y);
                 }
             }
