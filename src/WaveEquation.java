@@ -44,7 +44,11 @@ class PlaneWaveEquation extends WaveEquation {
     }
     
     double evaluateEquation(double x, double y, double t) {
-        double k_dot_r = (coefficients[Variable.K_X.ordinal()] * x) + (coefficients[Variable.K_Y.ordinal()] * y);
+        double K = coefficients[Variable.K.ordinal()];
+        double angle = -coefficients[Variable.ANGLE.ordinal()];
+        double Kx = K * Math.cos(angle);
+        double Ky = K * Math.sin(angle);
+        double k_dot_r = (Kx * x) + (Ky * y);
         return evaluateGeneralEquation(k_dot_r, t);
     }
     
@@ -71,7 +75,7 @@ class RadialWaveEquation extends WaveEquation {
         double r_y = y - center[1];
         double r_mag = Math.sqrt((r_x * r_x) + (r_y * r_y));
         
-        double k_dot_r = r_mag * coefficients[Variable.K_X.ordinal()];
+        double k_dot_r = r_mag * coefficients[Variable.K.ordinal()];
         return evaluateGeneralEquation(k_dot_r, t);
     }
     
@@ -84,4 +88,3 @@ class RadialWaveEquation extends WaveEquation {
         return new PlaneWaveEquation(coefficients);
     }
 }
-

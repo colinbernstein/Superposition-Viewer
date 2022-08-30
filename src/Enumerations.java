@@ -9,14 +9,14 @@ enum Variable {
             0, new JLabel("0"),
             1000, new JLabel("1")))),
     
-    K_X("βx", 0.0, 100.0, new HashMap<>(Map.of(
+    K("|β|", 0.0, 100.0, new HashMap<>(Map.of(
             0, (new JLabel("0")),
             1000, (new JLabel("100"))
     ))),
     
-    K_Y("βy", 0.0, 100.0, new HashMap<>(Map.of(
-            0, new JLabel("0"),
-            1000, new JLabel("100")
+    ANGLE("∠β", 0.0, 2 * Math.PI, new HashMap<>(Map.of(
+            0, (new JLabel("0")),
+            1000, (new JLabel("2π"))
     ))),
     
     RHO("ρ", 0.0, 1.0, new HashMap<>(Map.of(

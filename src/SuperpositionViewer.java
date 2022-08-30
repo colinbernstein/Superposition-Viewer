@@ -6,19 +6,23 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 
-public class SuperpositionViewer extends GraphicsInterface implements MouseListener {
-    private JPanel displayPanel;
+public class SuperpositionViewer implements MouseListener {
+    private JFrame frame;
+    private GraphicsFrame graphicsFrame;
     private WaveEquationPanel waveEquationPanel;
     private static int currWaveIdx = -1;
     private static WaveType currWaveType = WaveType.PLANE;
     private static final double PIXEL_SIZE = 0.6;
     private static final int SLIDER_STEPS = 1000;
     
+    private static final int FRAME_WIDTH = 1000;
+    private static final int FRAME_HEIGHT = 800;
+    private static final int GRAPHICS_WIDTH = 1000;
+    private static final int GRAPHICS_HEIGHT = 600;
     
-    private static final int PERIOD_MILLIS = 20;
+    private static final int PERIOD_MILLIS = 1;
     private List<WaveEquation> waves;
     private double time;
-    private int X, Y;
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(SuperpositionViewer::createAndShowGUI);
@@ -26,7 +30,7 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
     
     private static void createAndShowGUI() {
         try {
-            SuperpositionViewer viewer = new SuperpositionViewer(300, 300);
+            SuperpositionViewer viewer = new SuperpositionViewer();
             Runnable advanceRunner = () -> {
                 if (!viewer.waves.isEmpty())
                     for (Variable var : Variable.values()) {
@@ -38,7 +42,7 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
                     }
                 viewer.advance();
                 //viewer.drawFrame();
-                viewer.show(PERIOD_MILLIS);
+                viewer.graphicsFrame.show(viewer.frame, PERIOD_MILLIS);
             };
             
             ScheduledExecutorService advanceExecutor = Executors.newScheduledThreadPool(8);
@@ -48,70 +52,65 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
         }
     }
     
-    private SuperpositionViewer(int X, int Y) {
+    private SuperpositionViewer() {
         super();
         initViewer();
         waves = new ArrayList<>();
         time = 0.0;
-        this.X = X;
-        this.Y = Y;
         
-        setXscale(0, X - 1);
-        setYscale(1, Y);
+        graphicsFrame.setXscale(0, graphicsFrame.widthPixelCount - 1);
+        graphicsFrame.setYscale(1, graphicsFrame.heightPixelCount);
         
-        show(1);
+        // graphicsFrame.show(1);
     }
     
     
     private void advance() {
         time += (PERIOD_MILLIS * 0.001);
-        for (int row = 0; row < Y; row++) {
-            for (int col = 0; col < X; col++) {
+        for (int row = 0; row < graphicsFrame.heightPixelCount; row++) {
+            for (int col = 0; col < graphicsFrame.widthPixelCount; col++) {
                 double sample = 0.0;
+                Color color = Color.WHITE;
                 if (!waves.isEmpty()) {
                     for (WaveEquation wave : waves)
-                        sample += wave.evaluateEquation((double) col / X, (double) row / Y, time);
+                        sample += wave.evaluateEquation((double) col / graphicsFrame.widthPixelCount, (double) row / graphicsFrame.heightPixelCount, time);
                     sample = sample / waves.size() / 2.0 + 0.5;
-                    if (sample > 1.0 || sample < 0.0)       //DEBUG FOR OUT OF RANGE VALUES
-                        setPenColor(Color.white);           //DEBUG FOR OUT OF RANGE VALUES
-                    else
-                        setPenColor(ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45));
-                    filledSquare(col, Y - row, PIXEL_SIZE);
-                } else {    //Empty, grey out screen
-                    setPenColor(ColorScheme.transitionOfHueRange(0, 0, 360, 0.0, 0.1));
-                    filledSquare(col, Y - row, PIXEL_SIZE);
-                }
+                    if (sample <= 1.0 && sample >= 0.0)       //DEBUG FOR OUT OF RANGE VALUES
+                        color = ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45);
+                } else  //Empty, grey out screen
+                    color = ColorScheme.transitionOfHueRange(0, 0, 360, 0.0, 0.1);
+                graphicsFrame.filledSquare(col, graphicsFrame.heightPixelCount - row, PIXEL_SIZE, color);
             }
         }
     }
     
     
     private void initViewer() {
-        ImageIcon icon = new ImageIcon(onscreenImage);
+        frame = new JFrame();
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        graphicsFrame = new GraphicsFrame(GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
+        ImageIcon icon = new ImageIcon(graphicsFrame.getOnscreenImage());
         JLabel draw = new JLabel(icon);
-        //draw.setLocation(0, -100);
         draw.setAlignmentY(Component.BOTTOM_ALIGNMENT);
         draw.addMouseListener(this);
         //draw.addMouseMotionListener(std);
         
+        JPanel graphicsPanel = new JPanel();
+        graphicsPanel.setSize(graphicsFrame.width, graphicsFrame.height);
+        graphicsPanel.setLocation(0, FRAME_HEIGHT - GRAPHICS_HEIGHT);
+        graphicsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        //graphicsPanel.setBackground(Color.RED);
+        frame.add(graphicsPanel);
+        graphicsPanel.add(draw);
+        graphicsPanel.setVisible(true);
+        
         waveEquationPanel = new WaveEquationPanel();
         frame.add(waveEquationPanel);
         
-        displayPanel = new JPanel();
-        displayPanel.setSize(width, height);
-        displayPanel.setLocation(0, 0);
-        //displayPanel.setBackground(Color.RED);
-        frame.add(displayPanel);
-        displayPanel.add(draw);
-        displayPanel.setVisible(true);
-        
-        //panel.setVisible(true);
-        //frame.addKeyListener(std);    // JLabel cannot get keyboard focus
         //frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows
         frame.setTitle("Superposition Viewer");
-        //frame.setJMenuBar(createMenuBar());
-        frame.setSize(width, height);
+        //frame.setJMenuBar(new JMenuBar());
         //frame.pack();
         frame.requestFocusInWindow();
         frame.setVisible(true);
@@ -158,7 +157,7 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
         private WaveEquationPanel() {
             super();
             setLayout(new FlowLayout());
-            setSize(width, 125);
+            setSize(graphicsFrame.width, 125);
             setBackground(Color.GRAY);
             
             currentIdxLabel = new JLabel("Wave Number: 0");
@@ -169,54 +168,78 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
             deleteButton = new JButton("Delete");
             
             waveTypeButton.addActionListener(e -> {
-                currWaveType = currWaveType.nextLooping();
-                if (!waves.isEmpty()) {
-                    WaveEquation waveEquation = waves.get(currWaveIdx);
-                    if (waveEquation instanceof PlaneWaveEquation)
-                        waveEquation = ((PlaneWaveEquation) waveEquation).toRadialWave();
-                    else if (waveEquation instanceof RadialWaveEquation)
-                        waveEquation = ((RadialWaveEquation) waveEquation).toPlaneWave();
-                    waves.add(currWaveIdx, waveEquation);
-                    waves.remove(currWaveIdx + 1);
+                synchronized (graphicsFrame.mouseLock) {
+                    SwingUtilities.invokeLater(() -> {
+                        currWaveType = currWaveType.nextLooping();
+                        if (!waves.isEmpty()) {
+                            WaveEquation waveEquation = waves.get(currWaveIdx);
+                            if (waveEquation instanceof PlaneWaveEquation)
+                                waveEquation = ((PlaneWaveEquation) waveEquation).toRadialWave();
+                            else if (waveEquation instanceof RadialWaveEquation)
+                                waveEquation = ((RadialWaveEquation) waveEquation).toPlaneWave();
+                            waves.add(currWaveIdx, waveEquation);
+                            waves.remove(currWaveIdx + 1);
+                        }
+                        waveTypeButton.setText(currWaveType.getLabel());
+                    });
                 }
-                waveTypeButton.setText(currWaveType.getLabel());
             });
             addButton.addActionListener(e -> {
-                currWaveIdx++;
-                switch (currWaveType) {
-                    case PLANE: waves.add(new PlaneWaveEquation()); break;
-                    case RADIAL: waves.add(new RadialWaveEquation()); break;
+                synchronized (graphicsFrame.mouseLock) {
+                    SwingUtilities.invokeLater(() -> {
+                        currWaveIdx++;
+                        switch (currWaveType) {
+                            case PLANE: waves.add(new PlaneWaveEquation());
+                                break;
+                            case RADIAL: waves.add(new RadialWaveEquation());
+                                break;
+                        }
+                        for (SliderPanel sliderPanel : sliderPanels)
+                            sliderPanel.randomizeSliderPosition();
+                        currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                    });
                 }
-                for (SliderPanel sliderPanel : sliderPanels)
-                    sliderPanel.randomizeSliderPosition();
-                currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
             });
             nextButton.addActionListener(e -> {
-                if (currWaveIdx < waves.size() - 1) {
-                    currWaveIdx++;
-                    for (SliderPanel sliderPanel : sliderPanels)
-                        sliderPanel.setSliderPosition();
-                    currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                synchronized (graphicsFrame.mouseLock) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (currWaveIdx < waves.size() - 1) {
+                            currWaveIdx++;
+                            for (SliderPanel sliderPanel : sliderPanels)
+                                sliderPanel.setSliderPosition();
+                            currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                        }
+                    });
                 }
             });
             prevButton.addActionListener(e -> {
-                if (currWaveIdx > 0) {
-                    currWaveIdx--;
-                    for (SliderPanel sliderPanel : sliderPanels)
-                        sliderPanel.setSliderPosition();
-                    currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                synchronized (graphicsFrame.mouseLock) {
+                    //SwingWorker
+                    SwingUtilities.invokeLater(() -> {
+                        if (currWaveIdx > 0) {
+                            currWaveIdx--;
+                            for (SliderPanel sliderPanel : sliderPanels)
+                                sliderPanel.setSliderPosition();
+                            currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                        }
+                    });
+                    
                 }
             });
             deleteButton.addActionListener(e -> {
-                if (!waves.isEmpty()) {
-                    waves.remove(currWaveIdx);
-                    if (currWaveIdx == waves.size())
-                        currWaveIdx--;
-                    currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                synchronized (graphicsFrame.mouseLock) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (!waves.isEmpty()) {
+                            waves.remove(currWaveIdx);
+                            if (currWaveIdx == waves.size())
+                                currWaveIdx--;
+                            currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                        }
+                        if (waves.isEmpty())
+                            for (SliderPanel sliderPanel : sliderPanels)
+                                sliderPanel.centerSliderPosition();
+                    });
                 }
-                if (waves.isEmpty())
-                    for (SliderPanel sliderPanel : sliderPanels)
-                        sliderPanel.centerSliderPosition();
             });
             add(currentIdxLabel);
             add(waveTypeButton);
@@ -266,18 +289,18 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
     
     @Override
     public void mouseClicked(MouseEvent e) {
-        synchronized (mouseLock) {
+        synchronized (graphicsFrame.mouseLock) {
         }
     }
     
     @Override
     public void mousePressed(MouseEvent e) {
-        synchronized (mouseLock) {
+        synchronized (graphicsFrame.mouseLock) {
             if (!waves.isEmpty()) {
                 WaveEquation wave = waves.get(currWaveIdx);
                 if (wave instanceof RadialWaveEquation) {
-                    double x = (double) e.getX() / width;
-                    double y = (double) e.getY() / height;
+                    double x = (double) e.getX() / graphicsFrame.width;
+                    double y = (double) e.getY() / graphicsFrame.height;
                     ((RadialWaveEquation) wave).setCenter(x, y);
                 }
             }
@@ -286,21 +309,21 @@ public class SuperpositionViewer extends GraphicsInterface implements MouseListe
     
     @Override
     public void mouseReleased(MouseEvent e) {
-        synchronized (mouseLock) {
+        synchronized (graphicsFrame.mouseLock) {
         
         }
     }
     
     @Override
     public void mouseEntered(MouseEvent e) {
-        synchronized (mouseLock) {
+        synchronized (graphicsFrame.mouseLock) {
         
         }
     }
     
     @Override
     public void mouseExited(MouseEvent e) {
-        synchronized (mouseLock) {
+        synchronized (graphicsFrame.mouseLock) {
         
         }
     }
