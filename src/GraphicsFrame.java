@@ -53,7 +53,7 @@ class GraphicsFrame {
     void show(JFrame frame, int t) {
         defer = false;
         draw(frame);
-        try { Thread.sleep(t); } catch (InterruptedException e) { System.out.println("Error sleeping"); }
+       // try { Thread.sleep(t); } catch (InterruptedException e) { System.out.println("Error sleeping"); }
         defer = true;
     }
     

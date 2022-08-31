@@ -1,5 +1,8 @@
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.*;
@@ -29,7 +32,26 @@ public class SuperpositionViewer implements MouseListener {
     }
     
     private static void createAndShowGUI() {
-        try {
+        SuperpositionViewer viewer = new SuperpositionViewer();
+        ActionListener taskPerformer = new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                if (!viewer.waves.isEmpty()) {
+                    for (Variable var : Variable.values()) {
+                        try {
+                            viewer.waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
+                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
+                        } catch (Exception e) {
+                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
+                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
+                        }
+                    }
+                }
+                viewer.advance();
+            }
+        };
+        new Timer(PERIOD_MILLIS, taskPerformer).start();
+        /*try {
+            
             SuperpositionViewer viewer = new SuperpositionViewer();
             Runnable advanceRunner = () -> {
                 if (!viewer.waves.isEmpty())
@@ -44,14 +66,13 @@ public class SuperpositionViewer implements MouseListener {
                     }
                 viewer.advance();
                 //viewer.drawFrame();
-                viewer.graphicsFrame.show(viewer.frame, PERIOD_MILLIS);
             };
             
-            ScheduledExecutorService advanceExecutor = Executors.newScheduledThreadPool(8);
-            advanceExecutor.scheduleAtFixedRate(advanceRunner, 0, PERIOD_MILLIS, TimeUnit.MILLISECONDS);
+            // ScheduledExecutorService advanceExecutor = Executors.newScheduledThreadPool(8);
+            // advanceExecutor.scheduleAtFixedRate(advanceRunner, 0, PERIOD_MILLIS, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
     
     private SuperpositionViewer() {
@@ -85,6 +106,7 @@ public class SuperpositionViewer implements MouseListener {
                 graphicsFrame.filledSquare(col, graphicsFrame.heightPixelCount - row, PIXEL_SIZE, color);
             }
         }
+        graphicsFrame.show(frame, PERIOD_MILLIS);
     }
     
     
@@ -180,8 +202,7 @@ public class SuperpositionViewer implements MouseListener {
                                 waveEquation = ((PlaneWaveEquation) waveEquation).toRadialWave();
                             else if (waveEquation instanceof RadialWaveEquation)
                                 waveEquation = ((RadialWaveEquation) waveEquation).toPlaneWave();
-                            waves.add(currWaveIdx, waveEquation);
-                            waves.remove(currWaveIdx + 1);
+                            waves.set(currWaveIdx, waveEquation);
                         }
                         waveTypeButton.setText(currWaveType.getLabel());
                     });
@@ -217,7 +238,6 @@ public class SuperpositionViewer implements MouseListener {
             });
             prevButton.addActionListener(e -> {
                 synchronized (graphicsFrame.mouseLock) {
-                    //SwingWorker
                     SwingUtilities.invokeLater(() -> {
                         if (currWaveIdx > 0) {
                             currWaveIdx--;
