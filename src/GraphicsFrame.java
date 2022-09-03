@@ -4,9 +4,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 class GraphicsFrame {
-    // for synchronization
-    final Object mouseLock = new Object();
-    //static Object keyLock = new Object();
+    final Object mouseLock = new Object();  // for synchronization
     
     private BufferedImage offscreenImage, onscreenImage;    //Double buffered graphics
     private Graphics2D offscreen, onscreen;
@@ -19,17 +17,14 @@ class GraphicsFrame {
     GraphicsFrame(int width, int height) {
         this.width = width;
         this.height = height;
-        widthPixelCount = width / 3;
-        heightPixelCount = height / 3;
+        widthPixelCount = width / 5;
+        heightPixelCount = height / 5;
+        setXscale(widthPixelCount - 1);
+        setYscale(heightPixelCount);
         offscreenImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         onscreenImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         offscreen = offscreenImage.createGraphics();
         onscreen = onscreenImage.createGraphics();
-        //setXscale();
-        //setYscale();
-        //offscreen.setColor(Color.RED);
-        //offscreen.fillRect(0, 0, width, height);
-        //clear();
         
         // add antialiasing
         RenderingHints hints = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
@@ -47,13 +42,11 @@ class GraphicsFrame {
         offscreen.setColor(color);
         if (ws <= 1 && hs <= 1) pixel(x, y);
         else offscreen.fill(new Rectangle2D.Double(xs - ws / 2, ys - hs / 2, ws, hs));
-        //draw();
     }
     
-    void show(JFrame frame, int t) {
+    void show(JFrame frame) {
         defer = false;
         draw(frame);
-       // try { Thread.sleep(t); } catch (InterruptedException e) { System.out.println("Error sleeping"); }
         defer = true;
     }
     
@@ -84,27 +77,24 @@ class GraphicsFrame {
     /**
      * Set the x-scale
      *
-     * @param min the minimum value of the x-scale
      * @param max the maximum value of the x-scale
      */
-    void setXscale(double min, double max) {
-        double size = max - min;
+    private void setXscale(double max) {
         synchronized (mouseLock) {
-            xMin = min - BORDER * size;
-            xMax = max + BORDER * size;
+            xMin = -BORDER * max;
+            xMax = max + BORDER * max;
         }
     }
     
     /**
      * Set the y-scale
      *
-     * @param min the minimum value of the y-scale
      * @param max the maximum value of the y-scale
      */
-    void setYscale(double min, double max) {
-        double size = max - min;
+    private void setYscale(double max) {
+        double size = max - 1.0;
         synchronized (mouseLock) {
-            yMin = min - BORDER * size;
+            yMin = 1.0 - BORDER * size;
             yMax = max + BORDER * size;
         }
     }
@@ -118,7 +108,6 @@ class GraphicsFrame {
     private void pixel(double x, double y) {
         offscreen.fillRect((int) Math.round(scaleX(x)), (int) Math.round(scaleY(y)), 1, 1);
     }
-    
     
     BufferedImage getOnscreenImage() {
         return onscreenImage;

@@ -1,30 +1,29 @@
 import javax.swing.*;
-import javax.swing.Timer;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
-public class SuperpositionViewer implements MouseListener {
-    private JFrame frame;
-    private GraphicsFrame graphicsFrame;
-    private WaveEquationPanel waveEquationPanel;
-    private static int currWaveIdx = -1;
-    private static WaveType currWaveType = WaveType.PLANE;
+public class SuperpositionViewer {
     private static final double PIXEL_SIZE = 0.6;
     private static final int SLIDER_STEPS = 1000;
     
     private static final int FRAME_WIDTH = 1000;
-    private static final int FRAME_HEIGHT = 800;
+    private static final int FRAME_HEIGHT = 1000;
     private static final int GRAPHICS_WIDTH = 1000;
-    private static final int GRAPHICS_HEIGHT = 650;
+    private static final int GRAPHICS_HEIGHT = 875;
     
     private static final int PERIOD_MILLIS = 1;
+    
+    private JFrame frame;
+    private GraphicsFrame graphicsFrame;
+    private WaveEquationPanel waveEquationPanel;
+    private WaveType currWaveType;
     private List<WaveEquation> waves;
+    private int currWaveIdx;
     private double time;
     
     public static void main(String[] args) {
@@ -33,92 +32,68 @@ public class SuperpositionViewer implements MouseListener {
     
     private static void createAndShowGUI() {
         SuperpositionViewer viewer = new SuperpositionViewer();
-        ActionListener taskPerformer = new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                if (!viewer.waves.isEmpty()) {
-                    for (Variable var : Variable.values()) {
-                        try {
-                            viewer.waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
-                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
-                        } catch (Exception e) {
-                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
-                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
-                        }
-                    }
-                }
-                viewer.advance();
-            }
-        };
-        new Timer(PERIOD_MILLIS, taskPerformer).start();
-        /*try {
-            
-            SuperpositionViewer viewer = new SuperpositionViewer();
-            Runnable advanceRunner = () -> {
-                if (!viewer.waves.isEmpty())
-                    for (Variable var : Variable.values()) {
-                        try {
-                            viewer.waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
-                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
-                        } catch (Exception e) {
-                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
-                                    viewer.waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
-                        }
-                    }
-                viewer.advance();
-                //viewer.drawFrame();
-            };
-            
-            // ScheduledExecutorService advanceExecutor = Executors.newScheduledThreadPool(8);
-            // advanceExecutor.scheduleAtFixedRate(advanceRunner, 0, PERIOD_MILLIS, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
+        ActionListener scheduledAdvance = evt -> viewer.advance();
+        new Timer(PERIOD_MILLIS, scheduledAdvance).start();
     }
     
     private SuperpositionViewer() {
         super();
         initViewer();
         waves = new ArrayList<>();
+        currWaveIdx = -1;
+        currWaveType = WaveType.PLANE;
         time = 0.0;
-        
-        graphicsFrame.setXscale(0, graphicsFrame.widthPixelCount - 1);
-        graphicsFrame.setYscale(1, graphicsFrame.heightPixelCount);
-        
-        // graphicsFrame.show(1);
     }
-    
-    
-    private void advance() {
-        time += (PERIOD_MILLIS * 0.001);
-        for (int row = 0; row < graphicsFrame.heightPixelCount; row++) {
-            for (int col = 0; col < graphicsFrame.widthPixelCount; col++) {
-                double sample = 0.0;
-                Color color = Color.WHITE;
-                if (!waves.isEmpty()) {
-                    for (WaveEquation wave : waves)
-                        sample += wave.evaluateEquation((double) col / graphicsFrame.widthPixelCount,
-                                (double) row / graphicsFrame.widthPixelCount, time);
-                    sample = sample / waves.size() / 2.0 + 0.5;
-                    if (sample <= 1.0 && sample >= 0.0)       //DEBUG FOR OUT OF RANGE VALUES
-                        color = ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45);
-                } else  //Empty, grey out screen
-                    color = ColorScheme.transitionOfHueRange(0, 0, 360, 0.0, 0.1);
-                graphicsFrame.filledSquare(col, graphicsFrame.heightPixelCount - row, PIXEL_SIZE, color);
-            }
-        }
-        graphicsFrame.show(frame, PERIOD_MILLIS);
-    }
-    
     
     private void initViewer() {
         frame = new JFrame();
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         graphicsFrame = new GraphicsFrame(GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
+        
         ImageIcon icon = new ImageIcon(graphicsFrame.getOnscreenImage());
         JLabel draw = new JLabel(icon);
+        draw.setAlignmentX(Component.CENTER_ALIGNMENT);
         draw.setAlignmentY(Component.BOTTOM_ALIGNMENT);
-        draw.addMouseListener(this);
-        //draw.addMouseMotionListener(std);
+        MouseListener mouseListener = new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                synchronized (graphicsFrame.mouseLock) {
+                }
+            }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                synchronized (graphicsFrame.mouseLock) {
+                    if (!waves.isEmpty()) {
+                        WaveEquation wave = waves.get(currWaveIdx);
+                        if (wave instanceof RadialWaveEquation) {
+                            double x = (double) e.getX() / graphicsFrame.width;
+                            double y = (double) e.getY() / graphicsFrame.width;
+                            ((RadialWaveEquation) wave).setCenter(x, y);
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                synchronized (graphicsFrame.mouseLock) {
+                }
+            }
+            
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                synchronized (graphicsFrame.mouseLock) {
+                }
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                synchronized (graphicsFrame.mouseLock) {
+                }
+            }
+        };
+        draw.addMouseListener(mouseListener);
         
         JPanel graphicsPanel = new JPanel();
         graphicsPanel.setSize(graphicsFrame.width, graphicsFrame.height);
@@ -135,6 +110,7 @@ public class SuperpositionViewer implements MouseListener {
         //frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows
         frame.setTitle("Superposition Viewer");
+        //ADD COLOR SCHEME SELECTOR
         //frame.setJMenuBar(new JMenuBar());
         //frame.pack();
         frame.requestFocusInWindow();
@@ -142,6 +118,7 @@ public class SuperpositionViewer implements MouseListener {
     }
     
     private class WaveEquationPanel extends JPanel {
+        JPanel buttonCollection, sliderCollection;
         JButton waveTypeButton, addButton, nextButton, prevButton, deleteButton;
         JLabel currentIdxLabel;
         SliderPanel[] sliderPanels;
@@ -150,17 +127,33 @@ public class SuperpositionViewer implements MouseListener {
             JLabel label;
             JSlider slider;
             Variable var;
+            ChangeListener sliderListener;
             
             private SliderPanel(Variable var) {
                 super();
                 this.var = var;
                 label = new JLabel(var.getLabel());
+                label.setAlignmentY(JLabel.TOP);
                 //label.setBackground(Color.GREEN);
                 
                 slider = new JSlider(0, SLIDER_STEPS);
+                slider.setPreferredSize(new Dimension(125, 40));
                 slider.setLabelTable(var.getTickLabelMap());
-                randomizeSliderPosition();
+                //randomizeSliderPosition();
                 slider.setPaintLabels(true);
+                
+                sliderListener = e -> {
+                    if (!waves.isEmpty()) {
+                        try {
+                            waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
+                                    waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
+                        } catch (Exception ex) {
+                            System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
+                                    waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
+                        }
+                    }
+                };
+                slider.addChangeListener(sliderListener);
                 
                 add(label);
                 add(slider);
@@ -212,15 +205,25 @@ public class SuperpositionViewer implements MouseListener {
                 synchronized (graphicsFrame.mouseLock) {
                     SwingUtilities.invokeLater(() -> {
                         currWaveIdx++;
+                        //currWaveType = Math.random() >= 0.5 ? WaveType.PLANE : WaveType.RADIAL;
+                        //waveTypeButton.setText(currWaveType.getLabel());
                         switch (currWaveType) {
-                            case PLANE: waves.add(new PlaneWaveEquation());
-                                break;
-                            case RADIAL: waves.add(new RadialWaveEquation());
-                                break;
+                            case PLANE: waves.add(new PlaneWaveEquation()); break;
+                            case RADIAL: waves.add(new RadialWaveEquation()); break;
                         }
                         for (SliderPanel sliderPanel : sliderPanels)
                             sliderPanel.randomizeSliderPosition();
                         currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
+                        
+                        for (Variable var : Variable.values()) {
+                            try {
+                                waves.get(currWaveIdx).setCoefficient(var, sliderRangeToVarRange(var,
+                                        waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue()));
+                            } catch (Exception ex) {
+                                System.out.println("IllegalArgumentException" + "  " + var.getLabel() + " = " +
+                                        waveEquationPanel.sliderPanels[var.ordinal()].slider.getValue());
+                            }
+                        }
                     });
                 }
             });
@@ -246,7 +249,6 @@ public class SuperpositionViewer implements MouseListener {
                             currentIdxLabel.setText("Wave Number: " + (currWaveIdx + 1));
                         }
                     });
-                    
                 }
             });
             deleteButton.addActionListener(e -> {
@@ -264,21 +266,28 @@ public class SuperpositionViewer implements MouseListener {
                     });
                 }
             });
-            add(currentIdxLabel);
-            add(waveTypeButton);
-            add(addButton);
-            add(prevButton);
-            add(nextButton);
-            add(deleteButton);
+            
+            buttonCollection = new JPanel();
+            sliderCollection = new JPanel();
+            
+            buttonCollection.add(currentIdxLabel);
+            buttonCollection.add(waveTypeButton);
+            buttonCollection.add(addButton);
+            buttonCollection.add(prevButton);
+            buttonCollection.add(nextButton);
+            buttonCollection.add(deleteButton);
             
             sliderPanels = new SliderPanel[Variable.values().length];
             for (byte i = 0; i < sliderPanels.length; i++) {
                 sliderPanels[i] = new SliderPanel(Variable.values()[i]);
-                add(sliderPanels[i]);
+                sliderCollection.add(sliderPanels[i]);
             }
+            
+            add(buttonCollection);
+            add(sliderCollection);
+            
             setVisible(true);
         }
-        
     }
     
     /**
@@ -310,44 +319,26 @@ public class SuperpositionViewer implements MouseListener {
         return (int) ((value * SLIDER_STEPS / (var.getMax() - var.getMin())) + var.getMin());
     }
     
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        synchronized (graphicsFrame.mouseLock) {
-        }
-    }
-    
-    @Override
-    public void mousePressed(MouseEvent e) {
-        synchronized (graphicsFrame.mouseLock) {
-            if (!waves.isEmpty()) {
-                WaveEquation wave = waves.get(currWaveIdx);
-                if (wave instanceof RadialWaveEquation) {
-                    double x = (double) e.getX() / graphicsFrame.width;
-                    double y = (double) e.getY() / graphicsFrame.width;
-                    ((RadialWaveEquation) wave).setCenter(x, y);
-                }
+    private void advance() {
+        time += (PERIOD_MILLIS * 0.001);
+        for (int row = 0; row < graphicsFrame.heightPixelCount; row++) {
+            for (int col = 0; col < graphicsFrame.widthPixelCount; col++) {
+                double sample = 0.0;
+                Color color = Color.WHITE;
+                if (!waves.isEmpty()) {
+                    for (WaveEquation wave : waves)
+                        sample += wave.evaluateEquation((double) col / graphicsFrame.widthPixelCount,
+                                (double) row / graphicsFrame.widthPixelCount, time);
+                    sample = sample / waves.size() / 2.0 + 0.5;
+                    if (sample <= 1.0 && sample >= 0.0)
+                        color = ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45);
+                    else       //DEBUG FOR OUT OF RANGE VALUES
+                        throw new IndexOutOfBoundsException("Color sample has value: " + color);
+                } else  //Empty, grey out screen
+                    color = ColorScheme.transitionOfHueRange(0, 0, 360, 0.0, 0.1);
+                graphicsFrame.filledSquare(col, graphicsFrame.heightPixelCount - row, PIXEL_SIZE, color);
             }
         }
-    }
-    
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        synchronized (graphicsFrame.mouseLock) {
-        
-        }
-    }
-    
-    @Override
-    public void mouseEntered(MouseEvent e) {
-        synchronized (graphicsFrame.mouseLock) {
-        
-        }
-    }
-    
-    @Override
-    public void mouseExited(MouseEvent e) {
-        synchronized (graphicsFrame.mouseLock) {
-        
-        }
+        graphicsFrame.show(frame);
     }
 }
