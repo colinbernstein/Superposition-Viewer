@@ -40,23 +40,12 @@ enum Variable {
     private final String label;
     private final double min, max;
     private final HashMap<Integer, JLabel> tickLabelMap;
-    //private double value;
     
     Variable(String label, double min, double max, HashMap<Integer, JLabel> tickLabelMap) {
         this.label = label;
         this.min = min;
         this.max = max;
         this.tickLabelMap = tickLabelMap;
-        //value = 0.0;
-    }
-    
-    /*void setValue(double value) {
-        this.setValue(value);
-    }*/
-    
-    Variable nextLooping() {
-        int ord = ordinal();
-        return values()[ord >= Variable.values().length - 1 ? 0 : ord + 1];
     }
     
     String getLabel() {

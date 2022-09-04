@@ -49,11 +49,10 @@ public class SuperpositionViewer {
         frame = new JFrame();
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         graphicsFrame = new GraphicsFrame(GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
+        frame.setLayout(new BorderLayout());
         
         ImageIcon icon = new ImageIcon(graphicsFrame.getOnscreenImage());
         JLabel draw = new JLabel(icon);
-        draw.setAlignmentX(Component.CENTER_ALIGNMENT);
-        draw.setAlignmentY(Component.BOTTOM_ALIGNMENT);
         MouseListener mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -101,7 +100,7 @@ public class SuperpositionViewer {
         graphicsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         graphicsPanel.setBackground(Color.GRAY);
         frame.add(graphicsPanel);
-        graphicsPanel.add(draw);
+        graphicsPanel.add(draw, BorderLayout.CENTER);
         graphicsPanel.setVisible(true);
         
         waveEquationPanel = new WaveEquationPanel();
@@ -137,7 +136,7 @@ public class SuperpositionViewer {
                 //label.setBackground(Color.GREEN);
                 
                 slider = new JSlider(0, SLIDER_STEPS);
-                slider.setPreferredSize(new Dimension(125, 40));
+                slider.setPreferredSize(new Dimension(150, 40));
                 slider.setLabelTable(var.getTickLabelMap());
                 //randomizeSliderPosition();
                 slider.setPaintLabels(true);
@@ -155,8 +154,10 @@ public class SuperpositionViewer {
                 };
                 slider.addChangeListener(sliderListener);
                 
+                
                 add(label);
                 add(slider);
+                //setBackground(Color.LIGHT_GRAY);
             }
             
             private void randomizeSliderPosition() {
@@ -205,8 +206,6 @@ public class SuperpositionViewer {
                 synchronized (graphicsFrame.mouseLock) {
                     SwingUtilities.invokeLater(() -> {
                         currWaveIdx++;
-                        //currWaveType = Math.random() >= 0.5 ? WaveType.PLANE : WaveType.RADIAL;
-                        //waveTypeButton.setText(currWaveType.getLabel());
                         switch (currWaveType) {
                             case PLANE: waves.add(new PlaneWaveEquation()); break;
                             case RADIAL: waves.add(new RadialWaveEquation()); break;
@@ -268,7 +267,9 @@ public class SuperpositionViewer {
             });
             
             buttonCollection = new JPanel();
-            sliderCollection = new JPanel();
+            sliderCollection = new JPanel(new GridLayout(1, 6, 10, 0));
+            sliderCollection.setPreferredSize(new Dimension(FRAME_WIDTH - 50, 70));
+            sliderCollection.setBackground(Color.GRAY);
             
             buttonCollection.add(currentIdxLabel);
             buttonCollection.add(waveTypeButton);
