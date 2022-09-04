@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -18,8 +19,11 @@ public class SuperpositionViewer {
     
     private static final int PERIOD_MILLIS = 1;
     
+    private static final Color GREY = new Color(40, 40, 40);
+    
     private JFrame frame;
     private GraphicsFrame graphicsFrame;
+    private ColorScheme colorScheme;
     private WaveEquationPanel waveEquationPanel;
     private WaveType currWaveType;
     private List<WaveEquation> waves;
@@ -39,6 +43,7 @@ public class SuperpositionViewer {
     private SuperpositionViewer() {
         super();
         initViewer();
+        colorScheme = new ColorScheme(0, 360, 0.85, 0.45);
         waves = new ArrayList<>();
         currWaveIdx = -1;
         currWaveType = WaveType.PLANE;
@@ -48,6 +53,7 @@ public class SuperpositionViewer {
     private void initViewer() {
         frame = new JFrame();
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        //frame.setResizable(false);
         graphicsFrame = new GraphicsFrame(GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
         frame.setLayout(new BorderLayout());
         
@@ -56,8 +62,6 @@ public class SuperpositionViewer {
         MouseListener mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                synchronized (graphicsFrame.mouseLock) {
-                }
             }
             
             @Override
@@ -76,20 +80,14 @@ public class SuperpositionViewer {
             
             @Override
             public void mouseReleased(MouseEvent e) {
-                synchronized (graphicsFrame.mouseLock) {
-                }
             }
             
             @Override
             public void mouseEntered(MouseEvent e) {
-                synchronized (graphicsFrame.mouseLock) {
-                }
             }
             
             @Override
             public void mouseExited(MouseEvent e) {
-                synchronized (graphicsFrame.mouseLock) {
-                }
             }
         };
         draw.addMouseListener(mouseListener);
@@ -131,6 +129,7 @@ public class SuperpositionViewer {
             private SliderPanel(Variable var) {
                 super();
                 this.var = var;
+                
                 label = new JLabel(var.getLabel());
                 label.setAlignmentY(JLabel.TOP);
                 //label.setBackground(Color.GREEN);
@@ -154,14 +153,16 @@ public class SuperpositionViewer {
                 };
                 slider.addChangeListener(sliderListener);
                 
-                
                 add(label);
                 add(slider);
                 //setBackground(Color.LIGHT_GRAY);
             }
             
             private void randomizeSliderPosition() {
-                slider.setValue((int) (Math.random() * SLIDER_STEPS));
+                if (var == Variable.AMPLITUDE)
+                    slider.setValue((int) ((Math.random() * (SLIDER_STEPS * 5.0 / 6.0)) + (SLIDER_STEPS / 6.0)));
+                else
+                    slider.setValue((int) (Math.random() * SLIDER_STEPS));
             }
             
             private void setSliderPosition() {
@@ -178,6 +179,42 @@ public class SuperpositionViewer {
             setLayout(new FlowLayout());
             setSize(graphicsFrame.width, 125);
             setBackground(Color.GRAY);
+            
+            JMenuBar menuBar = new JMenuBar();
+            JMenu colorSchemeMenu = new JMenu("Color Scheme");
+            
+            JMenuItem classic_scheme = new JMenuItem("Classic");
+            JMenuItem heat_scheme = new JMenuItem("Heat");
+            JMenuItem black_white_scheme = new JMenuItem("B&W");
+            
+            ActionListener colorSchemeListener = e -> {
+                switch (e.getActionCommand()) {
+                    case "Classic":
+                        colorScheme = new ColorScheme(0, 360, 0.85, 0.45);
+                        break;
+                    case "Heat":
+                        colorScheme = new ColorScheme(0, 60, 0.8, 0.4);
+                        break;
+                    case "B&W":
+                        colorScheme = new ColorScheme(0, 360, 0.0, 0.5);
+                        break;
+                    default:
+                        System.out.println("Undefined color scheme selected: " + e.getActionCommand());
+                        break;
+                }
+            };
+            
+            classic_scheme.addActionListener(colorSchemeListener);
+            heat_scheme.addActionListener(colorSchemeListener);
+            black_white_scheme.addActionListener(colorSchemeListener);
+            
+            colorSchemeMenu.add(classic_scheme);
+            colorSchemeMenu.add(heat_scheme);
+            colorSchemeMenu.add(black_white_scheme);
+            
+            menuBar.add(colorSchemeMenu);
+            frame.setJMenuBar(menuBar);
+            
             
             currentIdxLabel = new JLabel("Wave Number: 0");
             waveTypeButton = new JButton("Plane");
@@ -332,11 +369,11 @@ public class SuperpositionViewer {
                                 (double) row / graphicsFrame.widthPixelCount, time);
                     sample = sample / waves.size() / 2.0 + 0.5;
                     if (sample <= 1.0 && sample >= 0.0)
-                        color = ColorScheme.transitionOfHueRange(sample, 0, 360, 0.85, 0.45);
+                        color = colorScheme.transitionOfHueRange(sample);
                     else       //DEBUG FOR OUT OF RANGE VALUES
                         throw new IndexOutOfBoundsException("Color sample has value: " + color);
                 } else  //Empty, grey out screen
-                    color = ColorScheme.transitionOfHueRange(0, 0, 360, 0.0, 0.1);
+                    color = GREY;
                 graphicsFrame.filledSquare(col, graphicsFrame.heightPixelCount - row, PIXEL_SIZE, color);
             }
         }

@@ -17,8 +17,8 @@ class GraphicsFrame {
     GraphicsFrame(int width, int height) {
         this.width = width;
         this.height = height;
-        widthPixelCount = width / 5;
-        heightPixelCount = height / 5;
+        widthPixelCount = width / 4;
+        heightPixelCount = height / 4;
         setXscale(widthPixelCount - 1);
         setYscale(heightPixelCount);
         offscreenImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -33,6 +33,7 @@ class GraphicsFrame {
         offscreen.addRenderingHints(hints);
     }
     
+    @SuppressWarnings("SameParameterValue")
     void filledSquare(double x, double y, double r, Color color) {
         if (r < 0) throw new IllegalArgumentException("square side length must be nonnegative");
         double xs = scaleX(x);
