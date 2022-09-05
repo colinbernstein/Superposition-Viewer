@@ -1,31 +1,23 @@
 import java.awt.*;
 
-class ColorScheme {
+interface GeneralColorScheme {
+    Color percentageToColor(double percentage);
+}
+
+abstract class ColorScheme implements GeneralColorScheme {
     
-    private int startHue, endHue;
     private double saturation, lightness;
     
-    ColorScheme(int startHue, int endHue, double saturation, double lightness) {
-        this.startHue = startHue;
-        this.endHue = endHue;
+    ColorScheme(double saturation, double lightness) {
         this.saturation = saturation;
         this.lightness = lightness;
     }
     
-    Color transitionOfHueRange(double percentage) {
-        // From 'startHue' 'percentage'-many to 'endHue'
-        // Finally map from [0°, 360°] -> [0, 1.0] by dividing
-        double hue = ((percentage * (endHue - startHue)) + startHue) / 360;
-        
-        // Get the color
-        return hslColorToRgb(hue);
-    }
-    
-    private Color hslColorToRgb(double hue) {
+    Color hslColorToRgb(double hue) {
         if (saturation == 0.0) {
             // The color is achromatic (has no color)
             // Thus use its lightness for a grey-scale color
-            int grey = percentToColor(hue);
+            int grey = percentToColorValueRange(hue);
             return new Color(grey, grey, grey);
         }
         
@@ -37,9 +29,9 @@ class ColorScheme {
         double p = 2 * lightness - q;
         
         double oneThird = 1.0 / 3;
-        double red = percentToColor(hueToRgb(p, q, hue + oneThird));
-        double green = percentToColor(hueToRgb(p, q, hue));
-        double blue = percentToColor(hueToRgb(p, q, hue - oneThird));
+        double red = percentToColorValueRange(hueToRgb(p, q, hue + oneThird));
+        double green = percentToColorValueRange(hueToRgb(p, q, hue));
+        double blue = percentToColorValueRange(hueToRgb(p, q, hue - oneThird));
         
         return new Color((int) red, (int) green, (int) blue);
     }
@@ -58,7 +50,39 @@ class ColorScheme {
         return p;
     }
     
-    private int percentToColor(double percentage) {
+    private int percentToColorValueRange(double percentage) {
         return (int) Math.round(percentage * 255);
+    }
+}
+
+class ClassicColorScheme extends ColorScheme {
+    
+    private int startHue, endHue;
+    
+    ClassicColorScheme(int startHue, int endHue, double saturation, double lightness) {
+        super(saturation, lightness);
+        this.startHue = startHue;
+        this.endHue = endHue;
+    }
+    
+    public Color percentageToColor(double percentage) {
+        // From 'startHue' 'percentage'-many to 'endHue'
+        // Finally map from [0°, 360°] -> [0, 1.0] by dividing
+        double hue = ((percentage * (endHue - startHue)) + startHue) / 360;
+        return hslColorToRgb(hue);
+    }
+}
+
+class BlackToColorColorScheme extends ColorScheme {
+    
+    private Color baseColor;
+    
+    BlackToColorColorScheme(int baseHue, double saturation, double lightness) {
+        super(saturation, lightness);
+        baseColor = hslColorToRgb(baseHue / 360.0);
+    }
+    
+    public Color percentageToColor(double percentage) {
+        return new Color((int) (baseColor.getRed() * percentage), (int) (baseColor.getGreen() * percentage), (int) (baseColor.getBlue() * percentage));
     }
 }

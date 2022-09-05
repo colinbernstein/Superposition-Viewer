@@ -1,7 +1,6 @@
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -43,7 +42,7 @@ public class SuperpositionViewer {
     private SuperpositionViewer() {
         super();
         initViewer();
-        colorScheme = new ColorScheme(0, 360, 0.85, 0.45);
+        colorScheme = new ClassicColorScheme(0, 360, 0.85, 0.45);
         waves = new ArrayList<>();
         currWaveIdx = -1;
         currWaveType = WaveType.PLANE;
@@ -186,17 +185,21 @@ public class SuperpositionViewer {
             JMenuItem classic_scheme = new JMenuItem("Classic");
             JMenuItem heat_scheme = new JMenuItem("Heat");
             JMenuItem black_white_scheme = new JMenuItem("B&W");
-            
+            JMenuItem black_yellow_scheme = new JMenuItem("B&Y");
+    
             ActionListener colorSchemeListener = e -> {
                 switch (e.getActionCommand()) {
                     case "Classic":
-                        colorScheme = new ColorScheme(0, 360, 0.85, 0.45);
+                        colorScheme = new ClassicColorScheme(0, 360, 0.85, 0.45);
                         break;
                     case "Heat":
-                        colorScheme = new ColorScheme(0, 60, 0.8, 0.4);
+                        colorScheme = new ClassicColorScheme(0, 60, 0.8, 0.4);
                         break;
                     case "B&W":
-                        colorScheme = new ColorScheme(0, 360, 0.0, 0.5);
+                        colorScheme = new ClassicColorScheme(0, 360, 0.0, 0.5);
+                        break;
+                    case "B&Y":
+                        colorScheme = new BlackToColorColorScheme(60, 1.0, 0.5);
                         break;
                     default:
                         System.out.println("Undefined color scheme selected: " + e.getActionCommand());
@@ -207,10 +210,12 @@ public class SuperpositionViewer {
             classic_scheme.addActionListener(colorSchemeListener);
             heat_scheme.addActionListener(colorSchemeListener);
             black_white_scheme.addActionListener(colorSchemeListener);
+            black_yellow_scheme.addActionListener(colorSchemeListener);
             
             colorSchemeMenu.add(classic_scheme);
             colorSchemeMenu.add(heat_scheme);
             colorSchemeMenu.add(black_white_scheme);
+            colorSchemeMenu.add(black_yellow_scheme);
             
             menuBar.add(colorSchemeMenu);
             frame.setJMenuBar(menuBar);
@@ -369,7 +374,7 @@ public class SuperpositionViewer {
                                 (double) row / graphicsFrame.widthPixelCount, time);
                     sample = sample / waves.size() / 2.0 + 0.5;
                     if (sample <= 1.0 && sample >= 0.0)
-                        color = colorScheme.transitionOfHueRange(sample);
+                        color = colorScheme.percentageToColor(sample);
                     else       //DEBUG FOR OUT OF RANGE VALUES
                         throw new IndexOutOfBoundsException("Color sample has value: " + color);
                 } else  //Empty, grey out screen
